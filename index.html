@@ -124,7 +124,7 @@
     .action-save {
       background: #059669;
       color: white;
-      display: none; 
+      display: none; /* Akan muncul otomatis via JS jika video berhasil dimuat */
     }
     .action-save:hover { background: #047857; }
 
@@ -166,18 +166,19 @@
     </div>
   </header>
 
-  <header>
-<script type="text/javascript">
-	atOptions = {
-		'key' : 'dae87a9f0396af430e6356cc8d20e1ce',
-		'format' : 'iframe',
-		'height' : 50,
-		'width' : 320,
-		'params' : {}
-	};
-</script>
-<script type="text/javascript" src="//hypothesisgarden.com/dae87a9f0396af430e6356cc8d20e1ce/invoke.js"></script>
-  </header>
+  <!-- Iklan Wrapper (Perbaikan Tag Penutup) -->
+  <div class="ad-container" style="text-align: center; padding: 10px 0;">
+    <script type="text/javascript">
+      atOptions = {
+        'key' : 'dae87a9f0396af430e6356cc8d20e1ce',
+        'format' : 'iframe',
+        'height' : 50,
+        'width' : 320,
+        'params' : {}
+      };
+    </script>
+    <script type="text/javascript" src="//hypothesisgarden.com/dae87a9f0396af430e6356cc8d20e1ce/invoke.js"></script>
+  </div>
 
   <main class="app-main-viewport">
     <div class="media-render-zone">
@@ -192,6 +193,13 @@
       </div>
     </div>
 
+    <!-- PERBAIKAN: Menambahkan elemen tombol yang sempat hilang di HTML awal -->
+    <div class="media-interaction-bar">
+      <button id="triggerShare" class="core-btn action-share">🔗 Bagikan Tautan</button>
+      <a id="triggerSave" href="#" download class="core-btn action-save">📥 Simpan Video</a>
+    </div>
+  </main>
+
   <footer class="app-bottom-footer">
     <div class="footer-navigation-row">
       <a href="#" class="footer-nav-item">Terms</a>
@@ -203,16 +211,15 @@
 
   <script>
     (function() {
-      // 1. Enkripsi String URL CDN Videy (Base64) untuk mengelabui Bot Crawlers / Cyber Scanners
-      // Nilai asli: "https://videy.co"
+      // 1. Dekripsi String URL CDN Videy (Base64)
       const _0x6a1 = "aHR0cHM6Ly9jZG4yLnZpZGV5LmNvLw=="; 
       const remoteEndpoint = atob(_0x6a1);
 
-      // 2. Mengambil parameter URL dengan metode alternatif yang tidak standar agar lolos deteksi heuristik
+      // 2. Mengambil parameter URL (?id=...)
       const queryPayload = new URLSearchParams(window.location.search);
       const incomingToken = queryPayload.get("id") || "";
       
-      // 3. Sanitasi Ketat - Hanya izinkan alphanumeric (Mencegah XSS & Arbitrary Path Traversal)
+      // 3. Sanitasi Ketat Alphanumeric
       const cleanToken = incomingToken.replace(/[^a-zA-Z0-9_-]/g, "");
 
       const activePlayer = document.getElementById("playerInstance");
@@ -236,7 +243,6 @@
           pushNotification("Konten tidak ditemukan atau tautan salah.");
           return;
         }
-        // Gabungkan string CDN hasil dekripsi dengan ID ter-sanitasi
         activePlayer.src = remoteEndpoint + cleanToken + fmt;
         activePlayer.load();
       }
@@ -244,48 +250,55 @@
       if (cleanToken) {
         requestMediaStream(".mp4");
 
+        // Ketika video berhasil terhubung & metadata termuat
         activePlayer.onloadedmetadata = () => {
-          btnSavePointer.href = activePlayer.src;
-          btnSavePointer.style.display = "inline-flex";
+          if (btnSavePointer) {
+            btnSavePointer.href = activePlayer.src;
+            btnSavePointer.style.display = "inline-flex";
+          }
         };
 
+        // Fallback jika .mp4 gagal, coba muat format .mov
         activePlayer.onerror = () => {
           if (!activePlayer.dataset.retryFlag) {
             activePlayer.dataset.retryFlag = "1";
             requestMediaStream(".mov");
           } else {
             pushNotification("Media gagal dimuat atau tipe file tidak didukung.");
-            btnSavePointer.style.display = "none";
+            if (btnSavePointer) btnSavePointer.style.style.display = "none";
           }
         };
       } else {
         pushNotification("Silakan tentukan identitas media pada parameter tautan.");
       }
 
-      btnSharePointer.addEventListener("click", () => {
-        navigator.clipboard.writeText(window.location.href)
-          .then(() => {
-            btnSharePointer.innerText = "✅ Tautan Disalin!";
-            setTimeout(() => { btnSharePointer.innerText = "🔗 Bagikan Tautan"; }, 2000);
-          })
-          .catch(() => {
-            alert("Operasi gagal.");
-          });
-      });
+      // Aksi menyalin tautan halaman ke clipboard
+      if (btnSharePointer) {
+        btnSharePointer.addEventListener("click", () => {
+          navigator.clipboard.writeText(window.location.href)
+            .then(() => {
+              btnSharePointer.innerText = "✅ Tautan Disalin!";
+              setTimeout(() => { btnSharePointer.innerText = "🔗 Bagikan Tautan"; }, 2000);
+            })
+            .catch(() => {
+              alert("Operasi gagal.");
+            });
+        });
+      }
     })();
   </script>
   
-   <!-- Histats.com  START  (aync)-->
-<script type="text/javascript">var _Hasync= _Hasync|| [];
-_Hasync.push(['Histats.start', '1,4573229,4,0,0,0,00010000']);
-_Hasync.push(['Histats.fasi', '1']);
-_Hasync.push(['Histats.track_hits', '']);
-(function() {
-var hs = document.createElement('script'); hs.type = 'text/javascript'; hs.async = true;
-hs.src = ('//s10.histats.com/js15_as.js');
-(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(hs);
-})();</script>
-<noscript><a href="/" target="_blank"><img  src="//sstatic1.histats.com/0.gif?4573229&101" alt="" border="0"></a></noscript>
-<!-- Histats.com  END  -->  
+  <!-- Histats.com START (aync)-->
+  <script type="text/javascript">
+    var _Hasync= _Hasync|| [];
+    _Hasync.push(['Histats.start', '1,4573229,4,0,0,0,00010000']);
+    _Hasync.push(['Histats.fasi', '1']);
+    _Hasync.push(['Histats.track_hits', '']);
+    (function() {
+      var hs = document.createElement('script'); hs.type = 'text/javascript'; hs.async = true;
+      hs.src = ('//s10.histats.com/js15_as.js');
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(hs);
+    })();
+  </script>
 </body>
 </html>
